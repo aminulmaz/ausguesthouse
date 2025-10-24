@@ -17,7 +17,9 @@ import {
   getDocs, 
   onSnapshot,
   updateDoc,
-  setLogLevel
+  setLogLevel,
+  writeBatch, // Import writeBatch
+  setDoc      // Import setDoc
 } from "firebase/firestore";
 import { 
   Home, 
@@ -49,17 +51,16 @@ const APP_TITLE = "University Guest House";
 const UNIVERSITY_NAME = "Himachal Pradesh University";
 
 // --- Firebase Configuration ---
-// This is the correct method for Vite.
-// We assign import.meta.env to a variable to help linters/compilers.
-const env = import.meta.env;
-
+// This is the 100% correct way for Vite.
+// The warnings in the build tool can be ignored.
+// The "process is not defined" error confirms this is the right syntax.
 const firebaseConfig = {
-  apiKey: env.VITE_FIREBASE_API_KEY,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: env.VITE_FIREBASE_APP_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // --- Firebase App Initialization ---
@@ -355,174 +356,160 @@ function Footer({ navigate }) {
           </div>
           <p className="mb-6">www.hpuniv.ac.in</p>
           
-          {/* Quick Links */}
-          <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 mb-8 text-blue-300 dark:text-blue-400">
-            <button onClick={() => navigate('home')} className="hover:underline">Home</button>
-            <button onClick={() => navigate('apply')} className="hover:underline">Apply</button>
-            <button onClick={() => navigate('status')} className="hover:underline">Check Status</button>
-            <button onClick={() => navigate('adminLogin')} className="hover:underline">Admin Login</button>
-            <button onClick={() => navigate('feedback')} className="hover:underline">Feedback</button>
+          <div className="flex justify-center space-x-6 mb-8">
+            <button onClick={() => navigate('home')} className="hover:text-white transition-colors">Home</button>
+            <button onClick={() => navigate('adminLogin')} className="hover:text-white transition-colors">Admin Login</button>
+            <button onClick={() => navigate('status')} className="hover:text-white transition-colors">Check Status</button>
           </div>
 
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            © {new Date().getFullYear()} {UNIVERSITY_NAME}. All rights reserved.
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-600 mt-1">
-            Portal designed & developed as a project.
-          </p>
+          <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} {UNIVERSITY_NAME}. All rights reserved.</p>
+          <p className="text-sm text-gray-500">Guest House Portal Maintained by Department of Computer Science</p>
         </div>
       </div>
     </footer>
   );
 }
 
-function FullScreenLoader() {
-  return (
-    <div className="fixed inset-0 bg-white dark:bg-gray-900 flex flex-col justify-center items-center z-50">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
-      <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-200">Loading Portal...</p>
-    </div>
-  );
-}
-
-function ComingSoonPage({ title }) {
-  return (
-    <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh]">
-      <h2 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">{title}</h2>
-      <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">This page is under construction.</p>
-      <Building size={64} className="text-blue-600 dark:text-blue-400" />
-    </div>
-  );
-}
-
 // --- Page Components ---
 
+/**
+ * HomePage Component
+ * Renders the main landing page with action cards.
+ */
 function HomePage({ navigate }) {
+  const heroImage = "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80";
+  
   return (
-    <div className="flex flex-col">
-      {/* Hero Section with Image */}
-      <div className="w-full h-[50vh] md:h-[70vh] bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-        {/* Placeholder for the main guesthouse image */}
+    <div className="bg-white dark:bg-gray-800">
+      {/* Hero Section */}
+      <div className="relative h-[400px] md:h-[500px] lg:h-[600px] w-full">
         <img 
-          src="https://placehold.co/1600x900/CCCCCC/777777?text=Faculty+Guest+House"
-          alt="Faculty Guest House"
+          src={heroImage} 
+          alt="Guest House" 
           className="w-full h-full object-cover"
+          onError={(e) => e.target.src = 'https://placehold.co/1600x600/3182CE/EBF8FF?text=Welcome+to+Our+Guest+House'}
         />
-        {/* You can overlay text if needed */}
-        {/* <h1 className="text-5xl text-white font-bold drop-shadow-lg">Welcome to the Guest House</h1> */}
-      </div>
-
-      {/* Action Cards Section */}
-      <div className="bg-white dark:bg-gray-800 py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <ActionCard
-              title="Book Now"
-              description="Apply for Guest House Booking"
-              icon={<User size={40} className="text-white" />}
-              color="blue"
-              onClick={() => navigate('apply')}
-            />
-            <ActionCard
-              title="Booking Status"
-              description="Check your Booking Status"
-              icon={<ShieldCheck size={40} className="text-white" />}
-              color="green"
-              onClick={() => navigate('status')}
-            />
-            <ActionCard
-              title="Cancel Booking"
-              description="Cancel/Withdraw your Booking"
-              icon={<X size={40} className="text-white" />}
-              color="red"
-              onClick={() => navigate('cancel')}
-            />
-            <ActionCard
-              title="Location"
-              description="View Location"
-              icon={<Building size={40} className="text-white" />}
-              color="gray"
-              onClick={() => window.open('https://maps.google.com', '_blank')} // Placeholder link
-            />
-          </div>
-        </div>
-      </div>
-      
-      {/* How it works Section */}
-      <div className="bg-gray-50 dark:bg-gray-900 py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="relative flex flex-col md:flex-row justify-center items-center md:space-x-8">
-            {/* Connecting Arrows (Desktop) */}
-            <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-blue-300 dark:bg-blue-700" style={{ transform: 'translateY(-50%)', zIndex: 0 }}></div>
-            
-            <StepCard
-              step="Step 1"
-              description="Applicants will apply online and receive Application No via Email."
-              icon={<Mail size={48} className="text-blue-600 dark:text-blue-400" />}
-            />
-            <StepCard
-              step="Step 2"
-              description="Authority will Approve or Reject the online Applications."
-              icon={<Users size={48} className="text-blue-600 dark:text-blue-400" />}
-            />
-            <StepCard
-              step="Step 3"
-              description="Check In"
-              icon={<Calendar size={48} className="text-blue-600 dark:text-blue-400" />}
-            />
-            <StepCard
-              step="Step 4"
-              description="Check Out"
-              icon={<Key size={48} className="text-blue-600 dark:text-blue-400" />}
-            />
-          </div>
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white text-center shadow-lg px-4">
+            Welcome to the {APP_TITLE}
+          </h1>
         </div>
       </div>
 
-      {/* About Us & Amenities Section */}
-      <div className="bg-white dark:bg-gray-800 py-20">
-        <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      {/* Action Cards Section (from screenshot) */}
+      <section className="relative -mt-20 z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          <ActionCard
+            title="Book Now"
+            description="Apply for Guest House Booking"
+            icon={CheckSquare}
+            color="blue"
+            onClick={() => navigate('apply')}
+          />
+          <ActionCard
+            title="Booking Status"
+            description="Check your Booking Status"
+            icon={Search}
+            color="green"
+            onClick={() => navigate('status')}
+          />
+          <ActionCard
+            title="Cancel"
+            description="Cancel/Withdraw your Booking"
+            icon={X}
+            color="red"
+            onClick={() => navigate('cancel')}
+          />
+          <ActionCard
+            title="Location"
+            description="View Guest House Location"
+            icon={Building}
+            color="gray"
+            onClick={() => { /* Implement location logic, e.g., open maps */ }}
+          />
+        </div>
+      </section>
+
+      {/* How it Works Section (from screenshot) */}
+      <section className="max-w-6xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-12">How It Works</h2>
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-0">
+          <StepCard
+            step="Step 1"
+            title="Apply Online"
+            description="Applicants will apply online and receive Application No via Email/SMS."
+          />
+          <StepArrow />
+          <StepCard
+            step="Step 2"
+            title="Approval"
+            description="Authority will Approve or Reject the online Applications."
+          />
+          <StepArrow />
+          <StepCard
+            step="Step 3"
+            title="Check In"
+            description="Guest checks in at the reception on the booking date."
+          />
+          <StepArrow />
+          <StepCard
+            step="Step 4"
+            title="Check Out"
+            description="Guest completes formalities and checks out."
+          />
+        </div>
+      </section>
+
+      {/* About Us & Amenities Section (from screenshot) */}
+      <section className="bg-gray-50 dark:bg-gray-800 py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* About Us */}
           <div>
-            <h2 className="text-3xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-20 after:h-1 after:bg-blue-600">About Us</h2>
-            <img 
-              src="https://placehold.co/600x400/CCCCCC/777777?text=University+Building" 
-              alt="University" 
-              className="w-full h-auto rounded-lg shadow-lg mb-6"
-            />
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">About Us</h2>
+            <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
+              <img 
+                src="https://placehold.co/600x400/EBF8FF/3182CE?text=University+Image" 
+                alt="University" 
+                className="w-full md:w-1/2 h-auto rounded-lg shadow-lg object-cover"
+              />
+              <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                Himachal Pradesh University was established by an Act of the Legislative Assembly of Himachal Pradesh on 22nd July, 1970. The headquarters of the University is located at Summer Hill, a suburb of Shimla.
+              </p>
+            </div>
             <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-              Himachal Pradesh University was established by an Act of the Legislative Assembly of Himachal Pradesh on 22nd July, 1970. The headquarters of the University is located at Summer Hill, the picturesque suburb of Shimla.
-              <br/><br/>
-              The prime objective of the University is to disseminate knowledge, advance learning and understanding through research, training and extension programmes. It instils in its students and teachers a conscious awareness regarding the social and economic needs, cultural ethos, and future requirements of the state and the country.
+              The prime objective of the University is to disseminate knowledge, advance learning and understanding through research, training and extension programmes. It instills in its students and teachers a conscious awareness regarding the social and economic needs, cultural ethos, and future requirements of the state and the country.
             </p>
           </div>
-          
           {/* Amenities */}
           <div>
-            <h2 className="text-3xl font-bold mb-6 relative pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-20 after:h-1 after:bg-blue-600">Amenities</h2>
-            <ul className="space-y-4 text-gray-600 dark:text-gray-300">
-              <AmenityItem text="Comfortable guest rooms with a range of options." />
-              <AmenityItem text="Heating: Climate control in rooms to ensure guest comfort." />
-              <AmenityItem text="Bathroom facilities: Private or shared bathrooms with hot and cold water." />
-              <AmenityItem text="Housekeeping: Regular room cleaning and fresh linens." />
-              <AmenityItem text="Dining facilities: On-site dining options, including a Mess Service." />
-              <AmenityItem text="Parking: Ample parking space for guests' vehicles." />
-              <AmenityItem text="Reception desk: A front desk for check-in, check-out, and guest inquiries." />
-            </ul>
-             <img 
-              src="https://placehold.co/600x400/EEEEEE/999999?text=Guest+Room+Interior" 
-              alt="Guest Room" 
-              className="w-full h-auto rounded-lg shadow-lg mt-8"
-            />
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">Amenities</h2>
+            <div className="flex flex-col-reverse md:flex-row items-center gap-6 mb-6">
+              <ul className="text-gray-600 dark:text-gray-300 space-y-3">
+                <AmenityItem>Comfortable guest rooms (single, double).</AmenityItem>
+                <AmenityItem>Climate control in rooms.</AmenityItem>
+                <AmenityItem>Private or shared bathrooms.</AmenityItem>
+                <AmenityItem>Regular room cleaning and fresh linens.</AmenityItem>
+                <AmenityItem>On-site dining options, including a Mess Service.</AmenityItem>
+                <AmenityItem>Ample parking space for guests' vehicles.</AmenityItem>
+                <AmenityItem>Reception desk for check-in, check-out.</AmenityItem>
+              </ul>
+              <img 
+                src="https://placehold.co/600x400/EBF8FF/3182CE?text=Amenity+Image" 
+                alt="Amenities" 
+                className="w-full md:w-1/2 h-auto rounded-lg shadow-lg object-cover"
+              />
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+              Please note that the availability of these amenities can vary. It's a good idea to check with the guest house directly for exact offerings.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
 
-function ActionCard({ title, description, icon, color, onClick }) {
+function ActionCard({ title, description, icon: Icon, color, onClick }) {
   const colorClasses = {
     blue: 'bg-blue-600 hover:bg-blue-700',
     green: 'bg-green-600 hover:bg-green-700',
@@ -533,55 +520,73 @@ function ActionCard({ title, description, icon, color, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`relative p-8 rounded-lg text-white text-left transition-all duration-300 transform hover:-translate-y-2 shadow-lg ${colorClasses[color]}`}
+      className={`w-full ${colorClasses[color]} text-white p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl`}
     >
-      <div className="absolute top-4 right-4 p-4 bg-black bg-opacity-10 rounded-full">
-        {icon}
-      </div>
-      <h3 className="text-3xl font-bold mb-2">{title}</h3>
-      <p className="text-gray-200 mb-6">{description}</p>
-      <div className="flex items-center text-sm font-medium">
-        Apply Now <ArrowRight size={16} className="ml-2" />
+      <div className="flex flex-col items-center text-center">
+        <div className="p-4 bg-white bg-opacity-20 rounded-full mb-4">
+          <Icon size={40} className="text-white" />
+        </div>
+        <h3 className="text-2xl font-bold mb-2">{title}</h3>
+        <p className="text-sm text-blue-100 mb-4">{description}</p>
+        <span className="flex items-center text-sm font-semibold">
+          Click Here <ArrowRight size={16} className="ml-1" />
+        </span>
       </div>
     </button>
   );
 }
 
-function StepCard({ step, description, icon }) {
+function StepCard({ step, title, description }) {
   return (
-    <div className="relative z-10 flex flex-col items-center text-center p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg w-60 m-4 md:m-0">
-      <div className="p-4 bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
-        {icon}
+    <div className="flex-1 max-w-xs text-center p-6 bg-cyan-500 text-white rounded-lg shadow-lg m-2">
+      <div className="text-sm font-bold bg-white text-cyan-600 rounded-full py-1 px-3 inline-block mb-4">{step}</div>
+      {/* Icon Placeholder */}
+      <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full mx-auto mb-4 flex items-center justify-center">
+        <User size={32} /> {/* Placeholder icon */}
       </div>
-      <h4 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">{step}</h4>
-      <p className="text-sm text-gray-600 dark:text-gray-300">{description}</p>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-sm">{description}</p>
     </div>
   );
 }
 
-function AmenityItem({ text }) {
+function StepArrow() {
   return (
-    <li className="flex items-start">
-      <CheckSquare size={20} className="text-green-500 mr-3 flex-shrink-0 mt-1" />
-      <span>{text}</span>
+    <div className="hidden md:block mx-4">
+      <ArrowRight size={40} className="text-gray-400 dark:text-gray-600" />
+    </div>
+  );
+}
+
+function AmenityItem({ children }) {
+  return (
+    <li className="flex items-center">
+      <ShieldCheck size={20} className="text-green-500 mr-3 flex-shrink-0" />
+      <span>{children}</span>
     </li>
   );
 }
 
-
+/**
+ * BookingForm Component
+ * Renders the form for submitting a new booking.
+ */
 function BookingForm({ navigate }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
+    idProof: 'aadhar',
+    idNumber: '',
     checkIn: '',
     checkOut: '',
-    guestType: '',
-    numGuests: '1',
-    purpose: '',
+    guestCount: '1',
+    purpose: 'official'
   });
-  const [status, setStatus] = useState({ loading: false, error: null, success: null });
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -590,108 +595,144 @@ function BookingForm({ navigate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus({ loading: true, error: null, success: null });
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
 
-    // Simple Validation
-    if (!formData.name || !formData.email || !formData.phone || !formData.checkIn || !formData.checkOut || !formData.guestType) {
-      setStatus({ loading: false, error: "Please fill in all required fields.", success: null });
+    // Basic validation
+    if (new Date(formData.checkOut) <= new Date(formData.checkIn)) {
+      setError("Check-out date must be after check-in date.");
+      setIsLoading(false);
       return;
     }
-    
+
     try {
-      // 1. Generate Application ID
-      const applicationId = `HPU-${Date.now().toString().slice(-6)}`;
-      
-      // 2. Prepare data for Firestore
-      const bookingData = {
-        ...formData,
-        applicationId,
-        status: 'Pending', // Initial status
-        submittedAt: new Date().toISOString(),
+      const applicationId = generateApplicationId();
+      // This 'data' object MUST match the firestore.rules
+      const data = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        idProof: formData.idProof,
+        idNumber: formData.idNumber,
+        checkIn: formData.checkIn,
+        checkOut: formData.checkOut,
+        guestCount: parseInt(formData.guestCount, 10),
+        purpose: formData.purpose,
+        status: "Pending",
+        applicationId: applicationId,
+        submittedAt: new Date().toISOString()
       };
-      
-      // 3. Save to Firestore
-      if (!bookingsCollectionRef) throw new Error("Database not initialized.");
-      await addDoc(bookingsCollectionRef, bookingData);
 
-      // 4. Send Email Notification
-      // This will call your serverless function
-      await sendEmailNotification({
-        to: formData.email,
-        template: 'booking_submitted',
-        data: {
-          name: formData.name,
-          applicationId: applicationId,
-          checkIn: formData.checkIn,
-        }
+      // --- Batched Write ---
+      // This is an atomic operation: both writes succeed or both fail.
+      const batch = writeBatch(db);
+
+      // 1. Set the private booking document
+      const bookingDocRef = doc(bookingsCollectionRef); // Creates a new doc ref
+      batch.set(bookingDocRef, data);
+
+      // 2. Set the public, non-sensitive status lookup document
+      const statusLookupRef = doc(db, `artifacts/${appId}/public/data/statusLookup`, data.applicationId);
+      batch.set(statusLookupRef, {
+        status: "Pending",
+        checkIn: data.checkIn
+      });
+
+      // Commit the batch
+      await batch.commit();
+      
+      // --- End Batched Write ---
+
+      setSuccess(`Your application has been submitted! Your Application ID is: ${applicationId}. Please save this for future reference.`);
+      
+      // Send email notification
+      sendEmailNotification(data.email, 'booking_submitted', {
+        name: data.name,
+        applicationId: data.applicationId,
+        checkIn: data.checkIn
       });
       
-      // 5. Show success
-      setStatus({ loading: false, error: null, success: `Booking submitted successfully! Your Application ID is: ${applicationId}. Please check your email.` });
       setFormData({
-        name: '', email: '', phone: '', address: '', checkIn: '', checkOut: '', guestType: '', numGuests: '1', purpose: '',
+        name: '', email: '', phone: '', address: '', idProof: 'aadhar',
+        idNumber: '', checkIn: '', checkOut: '', guestCount: '1', purpose: 'official'
       });
-      
-      // Optional: redirect to status page
-      // setTimeout(() => navigate('status'), 5000);
+      // Optionally navigate away after a delay
+      // setTimeout(() => navigate('home'), 5000);
 
-    } catch (error) {
-      console.error("Booking submission error:", error);
-      setStatus({ loading: false, error: `An error occurred: ${error.message}`, success: null });
+    } catch (err) {
+      console.error(err);
+      setError("Failed to submit application. Please check your network connection and try again. " + err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+    <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden">
         <div className="p-8">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 text-center">Guest House Booking Form</h2>
+          <h2 className="text-3xl font-bold text-center text-blue-800 dark:text-blue-300 mb-8">Guest House Booking Form</h2>
+
+          {error && <FormAlert type="error" message={error} />}
+          {success && <FormAlert type="success" message={success} />}
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            
+            {/* Form Sections */}
             <FormSection title="Personal Information">
-              <FormInput label="Full Name" name="name" value={formData.name} onChange={handleChange} required />
-              <FormInput label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} required />
-              <FormInput label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
-              <FormTextarea label="Full Address" name="address" value={formData.address} onChange={handleChange} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormInput label="Full Name" name="name" value={formData.name} onChange={handleChange} required />
+                <FormInput label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} required />
+                <FormInput label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
+                <FormInput label="Address" name="address" value={formData.address} onChange={handleChange} required />
+                <FormSelect
+                  label="ID Proof Type"
+                  name="idProof"
+                  value={formData.idProof}
+                  onChange={handleChange}
+                  options={[
+                    { value: 'aadhar', label: 'Aadhar Card' },
+                    { value: 'passport', label: 'Passport' },
+                    { value: 'driving_license', label: 'Driving License' },
+                    { value: 'voter_id', label: 'Voter ID' },
+                  ]}
+                />
+                <FormInput label="ID Number" name="idNumber" value={formData.idNumber} onChange={handleChange} required />
+              </div>
             </FormSection>
 
             <FormSection title="Booking Details">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormInput label="Check-in Date" name="checkIn" type="date" value={formData.checkIn} onChange={handleChange} required />
                 <FormInput label="Check-out Date" name="checkOut" type="date" value={formData.checkOut} onChange={handleChange} required />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormSelect 
-                  label="Guest Type"
-                  name="guestType"
-                  value={formData.guestType}
+                <FormInput label="Number of Guests" name="guestCount" type="number" min="1" max="10" value={formData.guestCount} onChange={handleChange} required />
+                <FormSelect
+                  label="Purpose of Visit"
+                  name="purpose"
+                  value={formData.purpose}
                   onChange={handleChange}
                   options={[
-                    { value: '', label: 'Select Type', disabled: true },
-                    { value: 'student', label: 'Student' },
-                    { value: 'faculty', label: 'Faculty' },
-                    { value: 'staff', label: 'Staff' },
-                    { value: 'guest', label: 'Official Guest' },
+                    { value: 'official', label: 'Official' },
+                    { value: 'personal', label: 'Personal' },
+                    { value: 'event', label: 'Event/Conference' },
                     { value: 'other', label: 'Other' },
                   ]}
-                  required
                 />
-                <FormInput label="Number of Guests" name="numGuests" type="number" min="1" value={formData.numGuests} onChange={handleChange} required />
               </div>
-              <FormTextarea label="Purpose of Visit" name="purpose" value={formData.purpose} onChange={handleChange} />
             </FormSection>
 
-            <div className="pt-6">
-              {status.error && <Message type="error" message={status.error} />}
-              {status.success && <Message type="success" message={status.success} />}
-
-              <button 
-                type="submit" 
-                disabled={status.loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+            <div className="pt-6 text-center">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full md:w-1/2 inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {status.loading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                {isLoading ? (
+                  <>
+                    <Spinner />
+                    Submitting...
+                  </>
                 ) : (
                   'Submit Application'
                 )}
@@ -704,16 +745,515 @@ function BookingForm({ navigate }) {
   );
 }
 
-// --- Form Helper Components ---
+/**
+ * BookingStatus Component
+ * Renders the page to check booking status.
+ */
+function BookingStatus() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [booking, setBooking] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-function FormSection({ title, children }) {
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchTerm) return;
+  
+    setIsLoading(true);
+    setBooking(null);
+    setError(null);
+  
+    try {
+      // This is now a secure 'get' operation from the public lookup collection
+      // We only search by Application ID, as phone/email is private.
+      const docRef = doc(db, `artifacts/${appId}/public/data/statusLookup`, searchTerm.trim());
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        // We found the status!
+        setBooking({
+          applicationId: docSnap.id,
+          ...docSnap.data()
+        });
+      } else {
+        // No status found for this ID
+        setError("No booking found with that Application ID. Please check the ID and try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred while fetching your booking status.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <fieldset className="border border-gray-300 dark:border-gray-600 rounded-lg p-6">
-      <legend className="px-2 text-lg font-semibold text-gray-700 dark:text-gray-200">{title}</legend>
-      <div className="space-y-4">
-        {children}
+    <div className="max-w-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden">
+        <div className="p-8">
+          <h2 className="text-3xl font-bold text-center text-blue-800 dark:text-blue-300 mb-8">Check Booking Status</h2>
+          
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 mb-8">
+            <label htmlFor="search-term" className="sr-only">Application ID</label>
+            <input
+              id="search-term"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Enter your Application ID"
+              required
+              className="flex-grow w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50"
+            >
+              {isLoading ? <Spinner /> : <Search size={20} className="mr-2" />}
+              Search
+            </button>
+          </form>
+
+          {error && <FormAlert type="error" message={error} />}
+
+          {booking && (
+            <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-inner">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Booking Status</h3>
+              <div className="space-y-3">
+                <StatusItem label="Application ID" value={booking.applicationId} />
+                <StatusItem label="Check-in Date" value={booking.checkIn} />
+                <StatusItem label="Status">
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                    booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' :
+                    booking.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
+                    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                  }`}>
+                    {booking.status}
+                  </span>
+                </StatusItem>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </fieldset>
+    </div>
+  );
+}
+
+/**
+ * CancelBooking Component
+ * Placeholder for booking cancellation.
+ */
+function CancelBooking() {
+  // Future implementation:
+  // 1. Search for booking by ID (similar to BookingStatus)
+  // 2. If found and status is "Pending" or "Approved", allow cancellation.
+  // 3. This would require an admin-like permission or a secure token.
+  // 4. For now, it's a "Coming Soon" page.
+  return <ComingSoonPage title="Cancel Booking" />;
+}
+
+/**
+ * AdminLogin Component
+ * Renders the login form for the admin.
+ */
+function AdminLogin({ onLoginSuccess }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      if (!auth) throw new Error("Firebase not initialized");
+      await signInWithEmailAndPassword(auth, email, password);
+      onLoginSuccess(); // Callback to App to change state
+    } catch (err) {
+      console.error(err);
+      setError("Failed to login. Please check your email and password.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto py-20 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden">
+        <div className="p-8">
+          <h2 className="text-3xl font-bold text-center text-blue-800 dark:text-blue-300 mb-8">Admin Login</h2>
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <FormInput 
+              label="Email" 
+              name="email" 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
+            <FormInput 
+              label="Password" 
+              name="password" 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+            
+            {error && <FormAlert type="error" message={error} />}
+
+            <div className="pt-6">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full inline-flex justify-center items-center px-6 py-3 border border-transparent text-lg font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50"
+              >
+                {isLoading ? <Spinner /> : <Key size={20} className="mr-2" />}
+                Sign In
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * AdminDashboard Component
+ * Main panel for admin to manage bookings.
+ */
+function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
+  const [bookings, setBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Real-time listener for bookings
+  useEffect(() => {
+    if (!bookingsCollectionRef) {
+      setError("Firestore is not initialized.");
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    // onSnapshot listens for real-time updates
+    // This query will now work because the user is authenticated (admin)
+    const unsubscribe = onSnapshot(bookingsCollectionRef, (snapshot) => {
+      const bookingsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      // Sort by submittedAt, newest first
+      bookingsData.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+      setBookings(bookingsData);
+      setIsLoading(false);
+    }, (err) => {
+      console.error(err);
+      setError("Failed to load bookings. Check Firestore security rules.");
+      setIsLoading(false);
+    });
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleStatusChange = async (booking, newStatus) => {
+    if (!newStatus || newStatus === booking.status) return;
+    
+    try {
+      // Use a batched write to update both collections atomically
+      const batch = writeBatch(db);
+
+      // 1. Update the private booking document
+      const bookingDocRef = doc(db, `artifacts/${appId}/public/data/bookings`, booking.id);
+      batch.update(bookingDocRef, { status: newStatus });
+
+      // 2. Update the public status lookup document
+      const statusLookupRef = doc(db, `artifacts/${appId}/public/data/statusLookup`, booking.applicationId);
+      batch.update(statusLookupRef, { status: newStatus });
+      
+      // Commit the batch
+      await batch.commit();
+
+      // Send email notification
+      sendEmailNotification(booking.email, 
+        newStatus === 'Approved' ? 'booking_approved' : 'booking_rejected', 
+        {
+          name: booking.name,
+          applicationId: booking.applicationId,
+          checkIn: booking.checkIn
+        }
+      );
+
+    } catch (err) {
+      console.error("Failed to update status: ", err);
+      // You could show an error toast to the admin here
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+
+  const filteredBookings = bookings; // Add filter logic here later
+
+  const stats = [
+    { name: 'Total Bookings', value: bookings.length, icon: Calendar },
+    { name: 'Pending', value: bookings.filter(b => b.status === 'Pending').length, icon: Users },
+    { name: 'Approved', value: bookings.filter(b => b.status === 'Approved').length, icon: ShieldCheck },
+  ];
+
+  return (
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Sidebar */}
+      <aside className={`relative ${isSidebarOpen ? 'w-64' : 'w-20'} bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 hidden md:block`}>
+        <div className="flex items-center justify-between p-4 h-20 border-b dark:border-gray-700">
+          <span className={`font-bold text-xl text-blue-800 dark:text-blue-300 ${!isSidebarOpen && 'hidden'}`}>Admin</span>
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200">
+            {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+        <nav className="flex-1 px-4 py-6 space-y-2">
+          <AdminNavItem icon={BarChart} label="Dashboard" isActive={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} isSidebarOpen={isSidebarOpen} />
+          <AdminNavItem icon={Settings} label="Settings" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} isSidebarOpen={isSidebarOpen} />
+          {/* Add more nav items here */}
+        </nav>
+        <div className="absolute bottom-0 left-0 w-full p-4 border-t dark:border-gray-700">
+          <AdminNavItem icon={LogOut} label="Logout" onClick={onLogout} isSidebarOpen={isSidebarOpen} />
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <header className="flex items-center justify-between h-20 p-6 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Welcome, Admin</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200">
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+            <button onClick={onLogout} className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200">
+              <LogOut size={20} />
+            </button>
+          </div>
+        </header>
+        
+        {/* Page Content */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+          {activeTab === 'dashboard' && (
+            <div>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {stats.map(stat => (
+                  <div key={stat.name} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                    <div className={`p-3 rounded-full ${
+                      stat.name === 'Total Bookings' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' :
+                      stat.name === 'Pending' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300' :
+                      'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300'
+                    }`}>
+                      <stat.icon size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.name}</p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bookings Table / Grid */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">All Bookings</h2>
+                  <div className="flex items-center space-x-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md ${viewMode === 'list' ? 'bg-white dark:bg-gray-800 shadow' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                      <List size={20} />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md ${viewMode === 'grid' ? 'bg-white dark:bg-gray-800 shadow' : 'text-gray-500 dark:text-gray-400'}`}
+                    >
+                      <Grid size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                {isLoading && <FullScreenLoader />}
+                {error && <FormAlert type="error" message={error} />}
+                
+                {!isLoading && !error && viewMode === 'list' && (
+                  <BookingList 
+                    bookings={filteredBookings} 
+                    onStatusChange={handleStatusChange} 
+                  />
+                )}
+                {!isLoading && !error && viewMode === 'grid' && (
+                  <BookingGrid 
+                    bookings={filteredBookings} 
+                    onStatusChange={handleStatusChange} 
+                  />
+                )}
+              </div>
+            </div>
+          )}
+          {activeTab === 'settings' && <ComingSoonPage title="Settings" />}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// --- Helper & Utility Components ---
+
+function AdminNavItem({ icon: Icon, label, isActive, onClick, isSidebarOpen }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
+        isActive
+          ? 'bg-blue-600 text-white shadow-lg'
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+      } ${!isSidebarOpen && 'justify-center'}`}
+    >
+      <Icon size={20} />
+      <span className={!isSidebarOpen ? 'hidden' : ''}>{label}</span>
+    </button>
+  );
+}
+
+function BookingList({ bookings, onStatusChange }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-max text-left">
+        <thead className="border-b border-gray-200 dark:border-gray-700">
+          <tr>
+            <th className="p-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Applicant</th>
+            <th className="p-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Dates</th>
+            <th className="p-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Application ID</th>
+            <th className="p-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Status</th>
+            <th className="p-4 text-sm font-semibold text-gray-500 dark:text-gray-400">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          {bookings.map(booking => (
+            <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td className="p-4">
+                <div className="font-medium text-gray-900 dark:text-white">{booking.name}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{booking.email}</div>
+              </td>
+              <td className="p-4 text-sm text-gray-700 dark:text-gray-300">
+                {booking.checkIn} to {booking.checkOut}
+              </td>
+              <td className="p-4">
+                <span className="px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md">
+                  {booking.applicationId}
+                </span>
+              </td>
+              <td className="p-4">
+                <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                  booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' :
+                  booking.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
+                  'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                }`}>
+                  {booking.status}
+                </span>
+              </td>
+              <td className="p-4">
+                <select
+                  value={booking.status}
+                  onChange={(e) => onStatusChange(booking, e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approve</option>
+                  <option value="Rejected">Reject</option>
+                </select>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function BookingGrid({ bookings, onStatusChange }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {bookings.map(booking => (
+        <div key={booking.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-md p-6 space-y-4">
+          <div>
+            <div className="font-semibold text-lg text-gray-900 dark:text-white">{booking.name}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{booking.email}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{booking.phone}</div>
+          </div>
+          <div className="text-sm">
+            <div className="font-medium text-gray-700 dark:text-gray-300">Dates:</div>
+            <div className="text-gray-600 dark:text-gray-200">{booking.checkIn} to {booking.checkOut}</div>
+          </div>
+          <div className="text-sm">
+            <div className="font-medium text-gray-700 dark:text-gray-300">App ID:</div>
+            <span className="px-2 py-1 text-xs font-mono bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md">
+              {booking.applicationId}
+            </span>
+          </div>
+          <div className="text-sm">
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">Status:</div>
+            <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+              booking.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100' :
+              booking.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100' :
+              'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+            }`}>
+              {booking.status}
+            </span>
+          </div>
+          <div>
+            <label htmlFor={`status-select-${booking.id}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">Change Status</label>
+            <select
+              id={`status-select-${booking.id}`}
+              value={booking.status}
+              onChange={(e) => onStatusChange(booking, e.target.value)}
+              className="mt-1 w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Pending">Pending</o'ption>
+              <option value="Approved">Approve</option>
+              <option value="Rejected">Reject</option>
+            </select>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+// --- Helper & Utility Components ---
+
+function ComingSoonPage({ title }) {
+  return (
+    <div className="text-center py-20 px-4">
+      <h2 className="text-4xl font-bold text-gray-800 dark:text-white mb-4">{title}</h2>
+      <p className="text-xl text-gray-600 dark:text-gray-400">This page is under construction. Please check back later!</p>
+    </div>
+  );
+}
+
+function StatusItem({ label, value, children }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</span>
+      {value ? <span className="text-base font-semibold text-gray-900 dark:text-white">{value}</span> : children}
+    </div>
   );
 }
 
@@ -721,7 +1261,7 @@ function FormInput({ label, name, type = 'text', value, onChange, required = fal
   return (
     <div>
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
+        {label}
       </label>
       <input
         type={type}
@@ -730,28 +1270,9 @@ function FormInput({ label, name, type = 'text', value, onChange, required = fal
         value={value}
         onChange={onChange}
         required={required}
-        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         {...props}
+        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
-    </div>
-  );
-}
-
-function FormTextarea({ label, name, value, onChange, required = false }) {
-  return (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <textarea
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        rows="3"
-        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      ></textarea>
     </div>
   );
 }
@@ -760,7 +1281,7 @@ function FormSelect({ label, name, value, onChange, options, required = false })
   return (
     <div>
       <label htmlFor={name} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
+        {label}
       </label>
       <select
         id={name}
@@ -768,598 +1289,86 @@ function FormSelect({ label, name, value, onChange, options, required = false })
         value={value}
         onChange={onChange}
         required={required}
-        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         {options.map(option => (
-          <option key={option.value} value={option.value} disabled={option.disabled}>
-            {option.label}
-          </option>
+          <option key={option.value} value={option.value}>{option.label}</option>
         ))}
       </select>
     </div>
   );
 }
 
-function Message({ type, message }) {
-  const baseClasses = "p-4 rounded-lg mb-6 text-sm";
-  const typeClasses = {
-    error: "bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200",
-    success: "bg-green-100 dark:bg-green-900 border border-green-400 text-green-700 dark:text-green-200",
-  };
+function FormSection({ title, children }) {
   return (
-    <div className={`${baseClasses} ${typeClasses[type]}`} role="alert">
-      {message}
+    <fieldset className="border border-gray-300 dark:border-gray-600 rounded-lg p-6">
+      <legend className="px-2 text-lg font-medium text-gray-800 dark:text-gray-200">{title}</legend>
+      {children}
+    </fieldset>
+  );
+}
+
+function FormAlert({ type, message }) {
+  const isError = type === 'error';
+  return (
+    <div className={`p-4 mb-6 rounded-lg ${isError ? 'bg-red-50 dark:bg-red-900' : 'bg-green-50 dark:bg-green-900'}`}>
+      <p className={`text-sm font-medium ${isError ? 'text-red-800 dark:text-red-100' : 'text-green-800 dark:text-green-100'}`}>
+        {message}
+      </p>
     </div>
   );
 }
 
-// --- Status & Cancel Pages ---
-
-function BookingStatus() {
-  const [appId, setAppId] = useState('');
-  const [email, setEmail] = useState('');
-  const [booking, setBooking] = useState(null);
-  const [status, setStatus] = useState({ loading: false, error: null });
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    setStatus({ loading: true, error: null });
-    setBooking(null);
-
-    if (!appId || !email) {
-      setStatus({ loading: false, error: "Please enter both Application ID and Email." });
-      return;
-    }
-
-    try {
-      if (!bookingsCollectionRef) throw new Error("Database not initialized.");
-      // Create a query to find the booking
-      const q = query(
-        bookingsCollectionRef, 
-        where("applicationId", "==", appId.trim()),
-        where("email", "==", email.trim())
-      );
-      
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        setStatus({ loading: false, error: "No booking found with that Application ID and Email. Please check your details." });
-      } else {
-        // Should only be one doc, get the first
-        const docData = querySnapshot.docs[0].data();
-        setBooking(docData);
-        setStatus({ loading: false, error: null });
-      }
-    } catch (error) {
-      console.error("Booking status search error:", error);
-      setStatus({ loading: false, error: `An error occurred: ${error.message}` });
-    }
-  };
-
+function FullScreenLoader() {
   return (
-    <div className="container mx-auto px-4 py-16 min-h-[70vh]">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 text-center">Check Booking Status</h2>
-          <form onSubmit={handleSearch} className="space-y-4">
-            <FormInput 
-              label="Application ID" 
-              name="appId" 
-              value={appId} 
-              onChange={(e) => setAppId(e.target.value)} 
-              placeholder="e.g., HPU-123456" 
-              required 
-            />
-            <FormInput 
-              label="Email Address" 
-              name="email" 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              placeholder="The email you used to book" 
-              required 
-            />
-            <button 
-              type="submit" 
-              disabled={status.loading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-            >
-              {status.loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-              ) : (
-                'Search Status'
-              )}
-            </button>
-          </form>
-        </div>
-
-        {status.error && <Message type="error" message={status.error} />}
-        
-        {booking && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Booking Details</h3>
-            <div className="space-y-3">
-              <StatusDetail label="Applicant Name" value={booking.name} />
-              <StatusDetail label="Application ID" value={booking.applicationId} />
-              <StatusDetail label="Check-in" value={booking.checkIn} />
-              <StatusDetail label="Check-out" value={booking.checkOut} />
-              <StatusDetail label="Booking Status" value={booking.status} status={booking.status} />
-              {booking.status === 'Rejected' && booking.rejectionReason && (
-                <StatusDetail label="Reason for Rejection" value={booking.rejectionReason} />
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="flex items-center justify-center h-screen w-screen bg-white dark:bg-gray-900">
+      <Spinner size="lg" />
     </div>
   );
 }
 
-function StatusDetail({ label, value, status = null }) {
-  let statusClass = '';
-  if (status) {
-    switch (status) {
-      case 'Approved':
-        statusClass = 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900';
-        break;
-      case 'Rejected':
-        statusClass = 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900';
-        break;
-      case 'Pending':
-        statusClass = 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900';
-        break;
-      default:
-        statusClass = 'text-gray-700 dark:text-gray-300';
-    }
-  }
-
+function Spinner({ size = 'md' }) {
+  const sizeClasses = size === 'lg' ? 'w-12 h-12' : 'w-5 h-5';
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b border-gray-200 dark:border-gray-700">
-      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</span>
-      <span className={`text-sm font-semibold ${status ? `px-3 py-1 rounded-full ${statusClass}` : 'text-gray-900 dark:text-white'}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function CancelBooking() {
-  // This would be very similar to BookingStatus
-  // 1. Find the booking using ID and Email
-  // 2. If status is "Pending", show a "Cancel Booking" button
-  // 3. On click, update the document status to "Cancelled"
-  // 4. Show success message
-  return (
-    <div className="container mx-auto px-4 py-16 min-h-[70vh]">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-6 text-center">Cancel Booking</h2>
-          <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Enter your details to find and cancel your booking. Only bookings that are still "Pending" can be cancelled here.</p>
-          {/* Form similar to BookingStatus */}
-          <form className="space-y-4">
-            <FormInput label="Application ID" name="appId" placeholder="e.g., HPU-123456" required />
-            <FormInput label="Email Address" name="email" type="email" placeholder="The email you used to book" required />
-            <button 
-              type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 disabled:bg-gray-400"
-            >
-              Find Booking to Cancel
-            </button>
-          </form>
-        </div>
-        {/* Logic to show booking details and cancel button would go here */}
-      </div>
-    </div>
-  );
-}
-
-
-// --- Admin Panel Components ---
-
-function AdminLogin({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [status, setStatus] = useState({ loading: false, error: null });
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setStatus({ loading: true, error: null });
-
-    if (!auth) {
-      setStatus({ loading: false, error: "Authentication service not available." });
-      return;
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      setStatus({ loading: false, error: null });
-      if (onLoginSuccess) onLoginSuccess();
-    } catch (error) {
-      console.error("Admin login error:", error);
-      setStatus({ loading: false, error: "Invalid email or password." });
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-center py-16 bg-gray-50 dark:bg-gray-900 min-h-[70vh]">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
-        <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white">Admin Portal Login</h2>
-        <form className="space-y-6" onSubmit={handleLogin}>
-          <FormInput 
-            label="Admin Email"
-            name="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <FormInput 
-            label="Password"
-            name="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          
-          {status.error && <Message type="error" message={status.error} />}
-
-          <button 
-            type="submit" 
-            disabled={status.loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {status.loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-            ) : (
-              'Log In'
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
-  const [page, setPage] = useState('dashboard'); // dashboard, settings
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Real-time listener for bookings
-  useEffect(() => {
-    if (!bookingsCollectionRef) {
-      setError("Database not initialized.");
-      setLoading(false);
-      return;
-    }
-    
-    setLoading(true);
-    // Query to get all bookings, you might want to order by date
-    const q = query(bookingsCollectionRef); 
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const bookingsData = [];
-      querySnapshot.forEach((doc) => {
-        bookingsData.push({ id: doc.id, ...doc.data() });
-      });
-      // Sort by submission date, newest first
-      bookingsData.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-      setBookings(bookingsData);
-      setLoading(false);
-    }, (err) => {
-      console.error("Error listening to bookings:", err);
-      setError("Failed to load bookings.");
-      setLoading(false);
-    });
-
-    return () => unsubscribe(); // Cleanup listener on unmount
-  }, []);
-
-  const handleUpdateStatus = async (id, newStatus, emailData, rejectionReason = '') => {
-    try {
-      const docRef = doc(db, `artifacts/${appId}/public/data/bookings`, id);
-      
-      const updateData = { status: newStatus };
-      if (newStatus === 'Rejected') {
-        updateData.rejectionReason = rejectionReason;
-      }
-      
-      await updateDoc(docRef, updateData);
-      
-      // Send email notification on status change
-      await sendEmailNotification({
-        to: emailData.email,
-        template: newStatus === 'Approved' ? 'booking_approved' : 'booking_rejected',
-        data: {
-          name: emailData.name,
-          applicationId: emailData.applicationId,
-          checkIn: emailData.checkIn,
-        }
-      });
-      
-    } catch (error) {
-      console.error("Error updating status:", error);
-      alert("Failed to update status. " + error.message); // Simple alert for admin
-    }
-  };
-
-  return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar */}
-      <nav className="w-64 bg-white dark:bg-gray-800 shadow-lg flex-shrink-0">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold text-blue-700 dark:text-blue-300">{APP_TITLE}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Admin Panel</p>
-        </div>
-        <ul className="flex-grow">
-          <AdminNavLink icon={BarChart} label="Dashboard" onClick={() => setPage('dashboard')} active={page === 'dashboard'} />
-          <AdminNavLink icon={Settings} label="Settings" onClick={() => setPage('settings')} active={page === 'settings'} />
-        </ul>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <button onClick={toggleTheme} className="w-full flex items-center p-3 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 mb-2">
-            {theme === 'light' ? <Moon size={18} className="mr-3" /> : <Sun size={18} className="mr-3" />}
-            Toggle Theme
-          </button>
-          <button onClick={onLogout} className="w-full flex items-center p-3 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900">
-            <LogOut size={18} className="mr-3" />
-            Logout
-          </button>
-        </div>
-      </nav>
-      
-      {/* Main Content */}
-      <main className="flex-1 p-8 overflow-x-auto">
-        {page === 'dashboard' && (
-          <BookingDashboard 
-            bookings={bookings} 
-            loading={loading}
-            error={error}
-            onUpdateStatus={handleUpdateStatus} 
-          />
-        )}
-        {page === 'settings' && <AdminSettings user={user} />}
-      </main>
-    </div>
-  );
-}
-
-function AdminNavLink({ icon: Icon, label, onClick, active }) {
-  return (
-    <li>
-      <button 
-        onClick={onClick}
-        className={`w-full flex items-center p-4 text-left ${
-          active 
-            ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-r-4 border-blue-600' 
-            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-        }`}
-      >
-        <Icon size={20} className="mr-4" />
-        <span className="font-medium">{label}</span>
-      </button>
-    </li>
-  );
-}
-
-function BookingDashboard({ bookings, loading, error, onUpdateStatus }) {
-  const [filter, setFilter] = useState('Pending'); // All, Pending, Approved, Rejected
-  
-  const filteredBookings = bookings.filter(b => {
-    if (filter === 'All') return true;
-    return b.status === filter;
-  });
-
-  return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Booking Dashboard</h1>
-      
-      {/* Filters */}
-      <div className="flex space-x-2 mb-6">
-        <FilterButton label="Pending" onClick={() => setFilter('Pending')} active={filter === 'Pending'} />
-        <FilterButton label="Approved" onClick={() => setFilter('Approved')} active={filter === 'Approved'} />
-        <FilterButton label="Rejected" onClick={() => setFilter('Rejected')} active={filter === 'Rejected'} />
-        <FilterButton label="All" onClick={() => setFilter('All')} active={filter === 'All'} />
-      </div>
-
-      {/* Content */}
-      {loading && (
-        <div className="flex justify-center items-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600"></div>
-        </div>
-      )}
-      {error && <Message type="error" message={error} />}
-      {!loading && !error && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <Th>Applicant</Th>
-                  <Th>Contact</Th>
-                  <Th>Dates</Th>
-                  <Th>Status</Th>
-                  <Th>Actions</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredBookings.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="p-6 text-center text-gray-500 dark:text-gray-400">
-                      No {filter} bookings found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredBookings.map(booking => (
-                    <BookingRow 
-                      key={booking.id} 
-                      booking={booking} 
-                      onUpdateStatus={onUpdateStatus} 
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Th({ children }) {
-  return <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{children}</th>;
-}
-
-function Td({ children, className = '' }) {
-  return <td className={`px-6 py-4 whitespace-nowrap text-sm ${className}`}>{children}</td>;
-}
-
-function BookingRow({ booking, onUpdateStatus }) {
-  const [showModal, setShowModal] = useState(false);
-  
-  const emailData = {
-    email: booking.email,
-    name: booking.name,
-    applicationId: booking.applicationId,
-    checkIn: booking.checkIn,
-  };
-
-  return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
-      <Td>
-        <div className="font-medium text-gray-900 dark:text-white">{booking.name}</div>
-        <div className="text-gray-500 dark:text-gray-400">{booking.applicationId}</div>
-      </Td>
-      <Td>
-        <div className="text-gray-900 dark:text-white">{booking.email}</div>
-        <div className="text-gray-500 dark:text-gray-400">{booking.phone}</div>
-      </Td>
-      <Td>
-        <div className="text-gray-900 dark:text-white">In: {booking.checkIn}</div>
-        <div className="text-gray-500 dark:text-gray-400">Out: {booking.checkOut}</div>
-      </Td>
-      <Td>
-        <StatusDetail value={booking.status} status={booking.status} />
-      </Td>
-      <Td>
-        {booking.status === 'Pending' ? (
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => onUpdateStatus(booking.id, 'Approved', emailData)}
-              className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200"
-            >
-              Approve
-            </button>
-            <button 
-              onClick={() => setShowModal(true)}
-              className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium hover:bg-red-200"
-            >
-              Reject
-            </button>
-          </div>
-        ) : (
-          <span className="text-gray-400 text-xs">Actioned</span>
-        )}
-      </Td>
-      
-      {showModal && (
-        <RejectModal
-          onClose={() => setShowModal(false)}
-          onConfirm={(reason) => {
-            onUpdateStatus(booking.id, 'Rejected', emailData, reason);
-            setShowModal(false);
-          }}
-        />
-      )}
-    </tr>
-  );
-}
-
-function FilterButton({ label, onClick, active }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-medium ${
-        active 
-          ? 'bg-blue-600 text-white shadow' 
-          : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-      }`}
+    <svg
+      className={`animate-spin ${sizeClasses} ${size === 'lg' ? '' : 'mr-3'} text-blue-600 dark:text-blue-400`}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
     >
-      {label}
-    </button>
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
   );
 }
 
-function RejectModal({ onClose, onConfirm }) {
-  const [reason, setReason] = useState('');
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Reason for Rejection</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Please provide a reason for rejecting this booking. This will be recorded and sent to the applicant.
-        </p>
-        <FormTextarea
-          label="Rejection Reason"
-          name="reason"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          required
-        />
-        <div className="flex justify-end space-x-3 mt-6">
-          <button 
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={() => onConfirm(reason)}
-            disabled={!reason}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400"
-          >
-            Confirm Rejection
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function AdminSettings({ user }) {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">Settings</h1>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-lg">
-        <h2 className="text-xl font-semibold mb-4">Admin Account</h2>
-        <div className="space-y-3">
-          <StatusDetail label="Admin Email" value={user.email} />
-          <StatusDetail label="User ID" value={user.uid} />
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-6">
-          To change your password or manage admin accounts, please visit the Firebase Authentication console.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-
-// --- Email Sending Function ---
+// --- Utility Functions ---
 
 /**
- * Sends an email by calling our Vercel serverless function.
- * @param {object} { to, template, data }
- * to: user's email
- * template: 'booking_submitted', 'booking_approved', 'booking_rejected'
- * data: { name, applicationId, checkIn }
+ * Generates a unique Application ID
  */
-async function sendEmailNotification({ to, template, data }) {
-  console.log("Attempting to send email:", { to, template, data });
+function generateApplicationId() {
+  const timestamp = new Date().getTime().toString(36).slice(-4);
+  const randomPart = Math.random().toString(36).slice(2, 7);
+  return `HPU-${timestamp}-${randomPart}`.toUpperCase();
+}
+
+/**
+ * Calls our serverless function to send an email.
+ */
+async function sendEmailNotification(to, template, data) {
+  console.log(`Sending email '${template}' to ${to} with data:`, data);
   try {
     const response = await fetch('/api/sendEmail', {
       method: 'POST',
@@ -1369,23 +1378,16 @@ async function sendEmailNotification({ to, template, data }) {
       body: JSON.stringify({ to, template, data }),
     });
 
-    const result = await response.json();
-
     if (!response.ok) {
-      throw new Error(result.message || 'Failed to send email');
+      const res = await response.json();
+      throw new Error(res.message || 'Email API request failed');
     }
-
-    console.log("Email send success:", result.message);
-    return true;
+    
+    console.log("Email sent successfully via serverless function.");
 
   } catch (error) {
-    console.error("sendEmailNotification error:", error);
-    // We don't block the user's flow, just log the error
-    // In a real app, you'd add this to a retry queue
-    return false;
+    console.error("Failed to send email:", error);
+    // Don't block user flow, just log the error
   }
 }
-
-
-
 
